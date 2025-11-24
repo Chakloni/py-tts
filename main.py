@@ -26,16 +26,26 @@ class DebugLog(BaseModel):
 
 @app.post("/tts")
 def tts(req: TTSRequest):
-    wav_path = synthesize(req.text)
-    
-    with open(wav_path, "rb") as f:
-        audio_bytes = f.read()
-    
-    return StreamingResponse(
-        io.BytesIO(audio_bytes),
-        media_type="audio/wav",
-        headers={"Content-Disposition": "inline"}
-    )
+    try:
+        print(f"[{datetime.now()}] Generando TTS para: {req.text[:50]}...")
+        wav_path = synthesize(req.text)
+        print(f"[{datetime.now()}] Archivo generado: {wav_path}")
+        
+        with open(wav_path, "rb") as f:
+            audio_bytes = f.read()
+        
+        print(f"[{datetime.now()}] Bytes leídos: {len(audio_bytes)}")
+        
+        return StreamingResponse(
+            io.BytesIO(audio_bytes),
+            media_type="audio/wav",
+            headers={"Content-Disposition": "inline"}
+        )
+    except Exception as e:
+        print(f"[{datetime.now()}] ERROR en /tts: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return {"error": str(e)}
 
 @app.post("/debug-log")
 def debug_log(log: DebugLog):

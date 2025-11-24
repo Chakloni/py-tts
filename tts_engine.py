@@ -1,6 +1,7 @@
 from piper import PiperVoice
 import uuid
 import os
+import tempfile
 
 # Load Piper model
 voice = PiperVoice.load(
@@ -10,7 +11,8 @@ voice = PiperVoice.load(
 
 def synthesize(text: str) -> str:
     filename = f"tts_{uuid.uuid4()}.wav"
-    output_path = os.path.join("/tmp", filename)
+    # Use system temp directory instead of /tmp
+    output_path = os.path.join(tempfile.gettempdir(), filename)
 
     generator = voice.synthesize(text)
 

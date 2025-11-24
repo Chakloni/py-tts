@@ -3,7 +3,7 @@ import uuid
 import os
 import tempfile
 import wave
-import io
+from pydub import AudioSegment
 
 # Load Piper model
 voice = PiperVoice.load(
@@ -12,8 +12,9 @@ voice = PiperVoice.load(
 )
 
 def synthesize(text: str) -> str:
-    filename = f"tts_{uuid.uuid4()}.wav"
-    output_path = os.path.join(tempfile.gettempdir(), filename)
+    # First create WAV file
+    wav_filename = f"tts_{uuid.uuid4()}.wav"
+    wav_path = os.path.join(tempfile.gettempdir(), wav_filename)
 
     generator = voice.synthesize(text)
 
@@ -32,11 +33,21 @@ def synthesize(text: str) -> str:
     # Combine all chunks
     audio_data = b"".join(audio_chunks)
 
-    # Write proper WAV file
-    with wave.open(output_path, "wb") as wav_file:
+    # Write WAV file
+    with wave.open(wav_path, "wb") as wav_file:
         wav_file.setnchannels(channels)
         wav_file.setsampwidth(sample_width)
         wav_file.setframerate(sample_rate)
         wav_file.writeframes(audio_data)
 
-    return output_path
+    # Convert WAV to MP3
+    mp3_filename = f"tts_{uuid.uuid4()}.mp3"
+    mp3_path = os.path.join(tempfile.gettempdir(), mp3_filename)
+    
+    audio = AudioSegment.from_wav(wav_path)
+    audio.export(mp3_path, format="mp3", bitrate="192k")
+    
+    # Clean up WAV file
+    os.remove(wav_path)
+
+    return mp3_path

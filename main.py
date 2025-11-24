@@ -54,3 +54,30 @@ def debug_log(log: DebugLog):
     print(f"  User Agent: {log.userAgent}")
     print(f"  Client Timestamp: {log.timestamp}")
     return {"status": "logged"}
+
+@app.get("/verify-wav")
+def verify_wav():
+    """Verifica que el último WAV generado sea válido"""
+    try:
+        # Generar un WAV de prueba
+        wav_path = synthesize("Prueba")
+        
+        with open(wav_path, "rb") as f:
+            data = f.read()
+        
+        # Verificar headers
+        if data[:4] != b'RIFF':
+            return {"error": "Invalid RIFF header"}
+        if data[8:12] != b'WAVE':
+            return {"error": "Invalid WAVE header"}
+        
+        riff_size = int.from_bytes(data[4:8], 'little')
+        
+        return {
+            "status": "valid",
+            "file_size": len(data),
+            "riff_size": riff_size,
+            "first_bytes": data[:20].hex()
+        }
+    except Exception as e:
+        return {"error": str(e)}

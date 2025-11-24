@@ -3,4 +3,4 @@ uvicorn
 piper-tts
 onnxruntime
 pydantic
-pydub
+scipy

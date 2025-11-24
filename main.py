@@ -26,14 +26,14 @@ class DebugLog(BaseModel):
 
 @app.post("/tts")
 def tts(req: TTSRequest):
-    mp3_path = synthesize(req.text)
+    wav_path = synthesize(req.text)
     
-    with open(mp3_path, "rb") as f:
+    with open(wav_path, "rb") as f:
         audio_bytes = f.read()
     
     return StreamingResponse(
         io.BytesIO(audio_bytes),
-        media_type="audio/mpeg",
+        media_type="audio/wav",
         headers={"Content-Disposition": "inline"}
     )
 

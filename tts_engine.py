@@ -3,7 +3,8 @@ import uuid
 import os
 import tempfile
 import wave
-from pydub import AudioSegment
+import numpy as np
+from scipy.io import wavfile
 
 # Load Piper model
 voice = PiperVoice.load(
@@ -12,9 +13,8 @@ voice = PiperVoice.load(
 )
 
 def synthesize(text: str) -> str:
-    # First create WAV file
-    wav_filename = f"tts_{uuid.uuid4()}.wav"
-    wav_path = os.path.join(tempfile.gettempdir(), wav_filename)
+    filename = f"tts_{uuid.uuid4()}.wav"
+    output_path = os.path.join(tempfile.gettempdir(), filename)
 
     generator = voice.synthesize(text)
 
@@ -30,24 +30,17 @@ def synthesize(text: str) -> str:
         sample_width = chunk.sample_width
         channels = chunk.sample_channels
 
-    # Combine all chunks
+    # Combine all chunks into a single bytes object
     audio_data = b"".join(audio_chunks)
-
-    # Write WAV file
-    with wave.open(wav_path, "wb") as wav_file:
-        wav_file.setnchannels(channels)
-        wav_file.setsampwidth(sample_width)
-        wav_file.setframerate(sample_rate)
-        wav_file.writeframes(audio_data)
-
-    # Convert WAV to MP3
-    mp3_filename = f"tts_{uuid.uuid4()}.mp3"
-    mp3_path = os.path.join(tempfile.gettempdir(), mp3_filename)
     
-    audio = AudioSegment.from_wav(wav_path)
-    audio.export(mp3_path, format="mp3", bitrate="192k")
+    # Convert bytes to numpy array (int16)
+    audio_array = np.frombuffer(audio_data, dtype=np.int16)
     
-    # Clean up WAV file
-    os.remove(wav_path)
+    # If stereo, reshape appropriately
+    if channels == 2:
+        audio_array = audio_array.reshape(-1, 2)
+    
+    # Write WAV file using scipy
+    wavfile.write(output_path, sample_rate, audio_array)
 
-    return mp3_path
+    return output_path

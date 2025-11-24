@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from tts_engine import synthesize
 import io
+from datetime import datetime
 
 app = FastAPI()
 
@@ -18,11 +19,15 @@ app.add_middleware(
 class TTSRequest(BaseModel):
     text: str
 
+class DebugLog(BaseModel):
+    message: str
+    userAgent: str
+    timestamp: str
+
 @app.post("/tts")
 def tts(req: TTSRequest):
     wav_path = synthesize(req.text)
     
-    # Read the file and return it as a stream
     with open(wav_path, "rb") as f:
         audio_bytes = f.read()
     
@@ -31,3 +36,11 @@ def tts(req: TTSRequest):
         media_type="audio/wav",
         headers={"Content-Disposition": "inline"}
     )
+
+@app.post("/debug-log")
+def debug_log(log: DebugLog):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{timestamp}] {log.message}")
+    print(f"  User Agent: {log.userAgent}")
+    print(f"  Client Timestamp: {log.timestamp}")
+    return {"status": "logged"}
